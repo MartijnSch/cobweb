@@ -20,6 +20,7 @@ class ContentLinkParser
     @options[:tags][:links] = [["a[href]", "href"], ["frame[src]", "src"], ["meta[@http-equiv=\"refresh\"]", "content"], ["link[href]:not([rel])", "href"], ["area[href]", "href"]]
     @options[:tags][:images] = [["img[src]", "src"]]
     @options[:tags][:related] = [["link[rel]", "href"]]
+    @options[:tags][:scripts] = [["script[src]", "src"]]
     @options[:tags][:styles] = [["link[rel='stylesheet'][href]", "href"], ["style[@type^='text/css']", lambda{|array,tag|
       first_regex =/url\((['"]?)(.*?)\1\)/
       tag.content.scan(first_regex) {|match| array << Addressable::URI.parse(match[1]).to_s}
