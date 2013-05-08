@@ -112,6 +112,7 @@ Creates a new crawler object based on a base_url
     ** :valid_mime_types              - an array of mime types that takes wildcards (eg 'text/*') defaults to ['*/*']
     ** :direct_call_process_job       - boolean that specifies whether objects should be passed directly to a processing method or should be put onto a queue
     ** :raise_exceptions              - defaults to handling exceptions with debug output, setting this to true will raise exceptions in your app
+    ** :crawl_limit                   - will limit the crawl to a certain number of pages
     
     
 bc. crawler = Cobweb.new(:follow_redirects => false)
