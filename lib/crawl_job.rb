@@ -6,7 +6,7 @@ class CrawlJob
   require "uri"
   require "redis"
   
-  @queue = :cobweb_crawl_job
+  @queue = :web_crawler
   
   # Resque perform method to maintain the crawl, enqueue found links and detect the end of crawl
   def self.perform(content_request)
