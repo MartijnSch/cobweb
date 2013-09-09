@@ -23,6 +23,8 @@ class CobwebCrawler
     @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{@crawl_id}", :redis => Redis.new(@options[:redis_options]))
     @options[:internal_urls] = [] if @options[:internal_urls].nil?
     @options[:internal_urls].map{|url| @redis.sadd("internal_urls", url)}
+    @options[:seed_urls] = [] if @options[:seed_urls].nil?
+    @options[:seed_urls].map{|link| @redis.sadd "queued", link }
 
     @options[:crawl_linked_external] = false unless @options.has_key? :crawl_linked_external
     
@@ -119,12 +121,12 @@ class CobwebCrawler
             end
 
             if @options[:store_inbound_links]
-              document_links.each do |link|
-                uri = URI.parse(link)
-                @redis.sadd("inbound_links_#{Digest::MD5.hexdigest(uri.to_s)}", url)
+              document_links.each do |target_link|
+                target_uri = UriHelper.parse(target_link)
+                @redis.sadd("inbound_links_#{Digest::MD5.hexdigest(target_uri.to_s)}", UriHelper.parse(url).to_s)
               end
             end
-          
+            
             @crawl_counter = @redis.scard("crawled").to_i
             @queue_counter = @redis.scard("queued").to_i
           

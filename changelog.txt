@@ -1,6 +1,28 @@
 Change Log
 ==========
 
+1.0.17
+  added basic authentication support
+
+1.0.16
+  remove forced output of cache hit notifications
+
+1.0.15
+  post bug fix version bump... 
+
+1.0.14
+  added seed_list functionality
+  binding web statistics to 0.0.0.0 instead of 127.0.0.1
+  updated debug info for cache hits
+
+1.0.13
+  changed order of crawls listed in web statistics to be oldest last
+  fixed bug in time statitstcs on web view, they were an hour out of date.
+
+1.0.12
+  added sidekiq support for processing
+  fixed bug around full cache being set into crawl-based cache
+
 1.0.11
   added command line options report, export
   report allows you to generate a csv with various data from your site

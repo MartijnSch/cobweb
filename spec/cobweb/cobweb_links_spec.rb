@@ -2,8 +2,9 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 require File.expand_path(File.dirname(__FILE__) + '/../../lib/cobweb_links')
 
 describe CobwebLinks do
-
+  include HttpStubs
   before(:each) do
+    setup_stubs
   
     @base_url = "http://www.baseurl.com/"
   

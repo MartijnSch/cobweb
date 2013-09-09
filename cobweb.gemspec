@@ -15,8 +15,8 @@ Gem::Specification.new do |s|
   s.files             = Dir["{spec,lib,views,public}/**/*"].delete_if { |f| f =~ /(rdoc)$/i }
   s.require_path      = "lib"
   s.has_rdoc          = false
+  s.license           = 'MIT'
   s.extra_rdoc_files  = ["README.textile"]
-  s.add_dependency('resque')
   s.add_dependency('redis')
   s.add_dependency('nokogiri')
   s.add_dependency('addressable')

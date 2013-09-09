@@ -20,6 +20,7 @@ class Stats
         @redis.hset "crawl_details", key, options[key].to_s
       end
     end
+    @redis.hset "statistics", "crawl_started_at", DateTime.now
     @redis.hset "statistics", "current_status", CobwebCrawlHelper::STARTING
   end
   
@@ -31,6 +32,7 @@ class Stats
     else
       @redis.hset "statistics", "current_status", CobwebCrawlHelper::FINISHED
     end
+    @redis.hset "statistics", "crawl_finished_at", DateTime.now
     #@redis.del "crawl_details"
   end
   
@@ -38,14 +40,13 @@ class Stats
     @redis.smembers "crawled"
   end
 
-  def inbound_links_for(url, redis=@redis)
-    uri = URI.parse(url)
+  def inbound_links_for(url)
+    uri = UriHelper.parse(url)
     @redis.smembers("inbound_links_#{Digest::MD5.hexdigest(uri.to_s)}")
   end
 
   # Returns statistics hash.  update_statistics takes the content hash, extracts statistics from it and updates redis with the data.  
   def update_statistics(content, crawl_counter=@redis.scard("crawled").to_i, queue_counter=@redis.scard("queued").to_i)
-    
     @lock.synchronize {
       @statistics = get_statistics
       
@@ -95,6 +96,7 @@ class Stats
       else
         mime_counts = {content[:mime_type] => 1}
       end
+
       @statistics[:mime_counts] = mime_counts.to_json
 
       # record mime categories stats
@@ -152,18 +154,18 @@ class Stats
   # Returns the statistics hash
   def get_statistics
     
-    @statistics = HashUtil.deep_symbolize_keys(@redis.hgetall("statistics"))
-    if @statistics[:status_counts].nil?
-      @statistics[:status_counts]
+    statistics = HashUtil.deep_symbolize_keys(@redis.hgetall("statistics"))
+    if statistics[:status_counts].nil?
+      statistics[:status_counts]
     else
-      @statistics[:status_counts] = JSON.parse(@statistics[:status_counts])
+      statistics[:status_counts] = JSON.parse(statistics[:status_counts])
     end
-    if @statistics[:mime_counts].nil?
-      @statistics[:mime_counts]
+    if statistics[:mime_counts].nil?
+      statistics[:mime_counts]
     else
-      @statistics[:mime_counts] = JSON.parse(@statistics[:mime_counts])
+      statistics[:mime_counts] = JSON.parse(statistics[:mime_counts])
     end
-    @statistics
+    statistics
   end
   
   # Sets the current status of the crawl

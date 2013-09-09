@@ -1,7 +1,10 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 describe CobwebCrawlHelper do
-  
+  include HttpStubs
+  before(:each) do
+    setup_stubs
+  end
   # this spec tests the crawl object
   
   describe "initialize" do

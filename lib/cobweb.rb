@@ -33,8 +33,14 @@ class Cobweb
     default_use_encoding_safe_process_job_to  false
     default_follow_redirects_to               true
     default_redirect_limit_to                 10
-    default_processing_queue_to               "CobwebProcessJob"
-    default_crawl_finished_queue_to           "CobwebFinishedJob"
+    default_queue_system_to                   :resque
+    if @options[:queue_system] == :resque
+      default_processing_queue_to               "CobwebProcessJob"
+      default_crawl_finished_queue_to           "CobwebFinishedJob"
+    else
+      default_processing_queue_to               "CrawlProcessWorker"
+      default_crawl_finished_queue_to           "CrawlFinishedWorker"      
+    end
     default_quiet_to                          true
     default_debug_to                          false
     default_cache_to                          300
@@ -43,6 +49,7 @@ class Cobweb
     default_redis_options_to                  Hash.new
     default_internal_urls_to                  []
     default_external_urls_to                  []
+    default_seed_urls_to                  []
     default_first_page_redirect_internal_to   true
     default_text_mime_types_to                ["text/*", "application/xhtml+xml"]
     default_obey_robots_to                    false
@@ -74,13 +81,22 @@ class Cobweb
     @redis.hset "statistics", "queued_at", DateTime.now
     @redis.set("crawl-counter", 0)
     @redis.set("queue-counter", 1)
+
+    @options[:seed_urls].map{|link| @redis.sadd "queued", link }
     
     @stats = Stats.new(request)
     @stats.start_crawl(request)
     
     # add internal_urls into redis
     @options[:internal_urls].map{|url| @redis.sadd("internal_urls", url)}
-    Resque.enqueue(CrawlJob, request)
+    if @options[:queue_system] == :resque
+      Resque.enqueue(CrawlJob, request)
+    elsif @options[:queue_system] == :sidekiq
+      CrawlWorker.perform_async(request)
+    else
+      raise "Unknown queue system: #{content_request[:queue_system]}"
+    end
+    
     request
   end
   
@@ -124,8 +140,13 @@ class Cobweb
 
     # check if it has already been cached
     if ((@options[:cache_type] == :crawl_based && redis.get(unique_id)) || (@options[:cache_type] == :full && full_redis.get(unique_id))) && @options[:cache]
-      puts "Cache hit for #{url}" unless @options[:quiet]
-      content = HashUtil.deep_symbolize_keys(Marshal.load(redis.get(unique_id)))
+      if @options[:cache_type] == :crawl_based 
+        puts "Cache hit in crawl for #{url}" unless @options[:quiet]
+        content = HashUtil.deep_symbolize_keys(Marshal.load(redis.get(unique_id)))
+      else
+        puts "Cache hit for #{url}" unless @options[:quiet]
+        content = HashUtil.deep_symbolize_keys(Marshal.load(full_redis.get(unique_id)))
+      end
     else
       # retrieve data
       #unless @http && @http.address == uri.host && @http.port == uri.inferred_port
@@ -136,7 +157,7 @@ class Cobweb
         @http.use_ssl = true
         @http.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
-      
+
       request_time = Time.now.to_f
       @http.read_timeout = @options[:timeout].to_i
       @http.open_timeout = @options[:timeout].to_i
@@ -147,6 +168,12 @@ class Cobweb
         request_options['User-Agent']= options[:user_agent] if options.has_key?(:user_agent)
 
         request = Net::HTTP::Get.new uri.request_uri, request_options
+        # authentication
+        if @options[:authentication] == "basic"
+          raise ":username and :password are required if using basic authentication" unless @options[:username] && @options[:password]
+          request.basic_auth @options[:username], @options[:password]
+        end
+      
         response = @http.request request
 
         if @options[:follow_redirects] and response.code.to_i >= 300 and response.code.to_i < 400
@@ -204,8 +231,13 @@ class Cobweb
         end
         # add content to cache if required
         if @options[:cache]
-          redis.set(unique_id, Marshal.dump(content))
-          redis.expire unique_id, @options[:cache].to_i
+          if @options[:cache_type] == :crawl_based
+            redis.set(unique_id, Marshal.dump(content))
+            redis.expire unique_id, @options[:cache].to_i
+          else
+            full_redis.set(unique_id, Marshal.dump(content))
+            full_redis.expire unique_id, @options[:cache].to_i
+          end
         end
       rescue RedirectError => e
         raise e if @options[:raise_exceptions]
@@ -298,7 +330,7 @@ class Cobweb
         @http.use_ssl = true
         @http.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
-      
+
       request_time = Time.now.to_f
       @http.read_timeout = @options[:timeout].to_i
       @http.open_timeout = @options[:timeout].to_i
@@ -309,6 +341,11 @@ class Cobweb
           request_options[ 'Cookie']= options[:cookies]
         end
         request = Net::HTTP::Head.new uri.request_uri, request_options
+        # authentication
+        if @options[:authentication] == "basic"
+          raise ":username and :password are required if using basic authentication" unless @options[:username] && @options[:password]
+          request.basic_auth @options[:username], @options[:password]
+        end
 
         response = @http.request request
 

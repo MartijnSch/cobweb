@@ -2,7 +2,10 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 describe Cobweb do
 
+  include HttpStubs
   before(:each) do
+    setup_stubs
+
     @base_url = "http://www.baseurl.com/"
     @cobweb = Cobweb.new :quiet => true, :cache => nil
 
