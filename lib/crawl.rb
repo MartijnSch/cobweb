@@ -6,7 +6,7 @@ module CobwebModule
 
       setup_defaults
 
-      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{@options[:crawl_id]}", :redis => Redis.new(@options[:redis_options]))
+      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{@options[:crawl_id]}", :redis => RedisConnection.new(@options[:redis_options]))
       @stats = Stats.new(@options)
       @debug = @options[:debug]
       @first_to_finish = false
@@ -20,6 +20,14 @@ module CobwebModule
 
     def already_queued?(link)
       @redis.sismember "queued", link
+    end
+
+    def already_running?(link)
+      @redis.sismember "currently_running", link
+    end
+
+    def already_handled?(link)
+      already_crawled?(link) || already_queued?(link) || already_running?(link)
     end
 
     # Returns true if the crawl count is within limits
@@ -50,16 +58,19 @@ module CobwebModule
     end
 
     def retrieve
-      unless @redis.sismember("currently_running", @options[:url])
-        @redis.sadd("currently_running", @options[:url])
-        unless already_crawled?
+
+      unless already_running? @options[:url]
+        unless already_crawled? @options[:url]
+          update_queues
           if within_crawl_limits?
+            @redis.sadd("currently_running", @options[:url])
             @stats.update_status("Retrieving #{@options[:url]}...")
             @content = Cobweb.new(@options).get(@options[:url], @options)
+            update_counters
+
             if @options[:url] == @redis.get("original_base_url")
               @redis.set("crawled_base_url", @content[:base_url])
             end
-            update_queues
 
             if content.permitted_type?
               ## update statistics
@@ -68,9 +79,15 @@ module CobwebModule
               return true
             end
           else
+            puts "======================================="
+            puts "OUTWITH CRAWL LIMITS"
+            puts "======================================="
             decrement_queue_counter
           end
         else
+          puts "======================================="
+          puts "ALREADY CRAWLED"
+          puts "======================================="
           decrement_queue_counter
         end
       else
@@ -96,19 +113,21 @@ module CobwebModule
         internal_links = document_links.select{ |link| @cobweb_links.internal?(link) }
 
         # reject the link if we've crawled it or queued it
-        internal_links.reject! { |link| @redis.sismember("crawled", link) }
-        internal_links.reject! { |link| @redis.sismember("queued", link) }
 
-        internal_links.each do |link|
-          if within_queue_limits? && !already_queued?(link) && !already_crawled?(link)
-            if status != CobwebCrawlHelper::CANCELLED
-              yield link if block_given?
-              unless link.nil?
-                @redis.sadd "queued", link
-                increment_queue_counter
+        internal_links.reject! { |link| already_handled?(link)}
+
+        lock("internal-links") do
+          internal_links.each do |link|
+            if within_queue_limits? && !already_handled?(link)
+              if status != CobwebCrawlHelper::CANCELLED
+                yield link if block_given?
+                unless link.nil?
+                  @redis.sadd "queued", link
+                  increment_queue_counter
+                end
+              else
+                debug_puts "Cannot enqueue new content as crawl has been cancelled."
               end
-            else
-              debug_puts "Cannot enqueue new content as crawl has been cancelled."
             end
           end
         end
@@ -133,35 +152,37 @@ module CobwebModule
         # move the url from the queued list to the crawled list - for both the original url, and the content url (to handle redirects)
         @redis.srem "queued", @options[:url]
         @redis.sadd "crawled", @options[:url]
-        if content.url != @options[:url]
-          @redis.srem "queued", content.url
-          @redis.sadd "crawled", content.url
-        end
+
         # increment the counter if we are not limiting by page only || we are limiting count by page and it is a page
-        if @options[:crawl_limit_by_page]
-          if content.mime_type.match("text/html")
-            increment_crawl_counter
-          end
-        else
+      end
+    end
+
+    def update_counters
+      if @options[:crawl_limit_by_page]
+        if content.mime_type.match("text/html")
           increment_crawl_counter
         end
-        decrement_queue_counter
+      else
+        increment_crawl_counter
       end
+      decrement_queue_counter
     end
 
     def to_be_processed?
-      (!finished? || within_process_limits?) && !@redis.sismember("enqueued", @options[:url])
+      !finished? && within_process_limits? && !@redis.sismember("queued", @options[:url])
     end
 
     def process(&block)
-      if @options[:crawl_limit_by_page]
-        if content.mime_type.match("text/html")
+      lock("process-count") do
+        if @options[:crawl_limit_by_page]
+          if content.mime_type.match("text/html")
+            increment_process_counter
+          end
+        else
           increment_process_counter
         end
-      else
-        increment_process_counter
+        #@redis.sadd "queued", @options[:url]
       end
-      @redis.sadd "enqueued", @options[:url]
 
       yield if block_given?
       @redis.incr("crawl_job_enqueued_count")
@@ -173,20 +194,33 @@ module CobwebModule
 
     def finished?
       print_counters
+      debug_puts @stats.get_status
+      if @stats.get_status == CobwebCrawlHelper::FINISHED
+        debug_puts "Already Finished!"
+      end  
       # if there's nothing left queued or the crawled limit has been reached and we're not still processing something
       if @options[:crawl_limit].nil? || @options[:crawl_limit] == 0
         if queue_counter == 0 && @redis.smembers("currently_running").empty?
-          finished
+          debug_puts "queue_counter is 0 and currently_running is empty so we're done"
+          #finished
           return true
         end
-      elsif (queue_counter == 0 && @redis.smembers("currently_running").empty?) || process_counter >= @options[:crawl_limit].to_i
-        finished
+      elsif (queue_counter == 0 || process_counter >= @options[:crawl_limit].to_i) && @redis.smembers("currently_running").empty?
+        #finished
+        debug_puts "queue_counter: #{queue_counter}, @redis.smembers(\"currently_running\").empty?: #{@redis.smembers("currently_running").empty?}, process_counter: #{process_counter}, @options[:crawl_limit].to_i: #{@options[:crawl_limit].to_i}"
         return true
       end
       false
     end
 
-    def finished
+    def finish
+      debug_puts ""
+      debug_puts "========================================================================"
+      debug_puts "finished crawl on #{@options[:url]}"
+      print_counters
+      debug_puts "========================================================================"
+      debug_puts ""
+
       set_first_to_finish
       @stats.end_crawl(@options)
     end
@@ -233,12 +267,12 @@ module CobwebModule
       end
 
       debug_puts "RECEIVED LOCK [#{key}]"
-      @redis.expire("#{key}_lock", 10)
+      @redis.expire("#{key}_lock", 30)
       begin
         result = yield
       ensure
         @redis.del("#{key}_lock")
-        debug_puts "LOCK RELEASED [#{key}]"
+        #debug_puts "LOCK RELEASED [#{key}]"
       end
       result
     end
