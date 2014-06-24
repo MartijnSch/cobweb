@@ -19,7 +19,7 @@ class CobwebLinks
   
   def allowed?(link)
     if @options[:obey_robots]
-      robot = Robots.new(:url => link, :user_agent => @options[:user_agent])
+      robot = Robots.new(url: link, user_agent: @options[:user_agent])
       return robot.allowed?(link)
     else
       return true

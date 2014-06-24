@@ -19,12 +19,12 @@ class Server < Sinatra::Base
     @full_redis.smembers("cobweb_crawls").each do |crawl_id|
       version = cobweb_version(crawl_id)
       if version == Cobweb.version
-        redis = Redis::Namespace.new("cobweb-#{version}-#{crawl_id}", :redis => RedisConnection.new(redis_options))
+        redis = Redis::Namespace.new("cobweb-#{version}-#{crawl_id}", redis: RedisConnection.new(redis_options))
         stats = HashUtil.deep_symbolize_keys({
-          :cobweb_version => version,
-          :crawl_details => redis.hgetall("crawl_details"),
-          :statistics => redis.hgetall("statistics"),
-          :minute_totals => redis.hgetall("minute_totals"),
+          cobweb_version: version,
+          crawl_details: redis.hgetall("crawl_details"),
+          statistics: redis.hgetall("statistics"),
+          minute_totals: redis.hgetall("minute_totals"),
           })
         @crawls << stats
         @crawls.sort!{|a,b| b[:statistics][:crawl_started_at] <=> a[:statistics][:crawl_started_at]}
@@ -38,7 +38,7 @@ class Server < Sinatra::Base
   get '/statistics/:crawl_id' do
     
     version = cobweb_version(params[:crawl_id])
-    redis = Redis::Namespace.new("cobweb-#{version}-#{params[:crawl_id]}", :redis => RedisConnection.new(redis_options))
+    redis = Redis::Namespace.new("cobweb-#{version}-#{params[:crawl_id]}", redis: RedisConnection.new(redis_options))
     
     @statistics = HashUtil.deep_symbolize_keys(redis.hgetall("statistics"))
     if @statistics[:status_counts].nil?
@@ -52,18 +52,18 @@ class Server < Sinatra::Base
       @statistics[:mime_counts] = JSON.parse(@statistics[:mime_counts])
     end
     @crawl = {
-        :cobweb_version => version,
-        :statistics => @statistics,
-        :crawl_details => HashUtil.deep_symbolize_keys(redis.hgetall("crawl_details")), 
-        :minute_totals => HashUtil.deep_symbolize_keys(redis.hgetall("minute_totals")),
-        :status_200_count => HashUtil.deep_symbolize_keys(redis.hgetall("status_200_count")),
-        :status_400_count => HashUtil.deep_symbolize_keys(redis.hgetall("status_400_count")),
-        :status_500_count => HashUtil.deep_symbolize_keys(redis.hgetall("status_500_count")),
-        :mime_text_count => HashUtil.deep_symbolize_keys(redis.hgetall("mime_text_count")),
-        :mime_image_count => HashUtil.deep_symbolize_keys(redis.hgetall("mime_image_count")),
-        :mime_application_count => HashUtil.deep_symbolize_keys(redis.hgetall("mime_application_count")),
-        :pages_count => HashUtil.deep_symbolize_keys(redis.hgetall("pages_count")),
-        :assets_count => HashUtil.deep_symbolize_keys(redis.hgetall("assets_count"))
+        cobweb_version: version,
+        statistics: @statistics,
+        crawl_details: HashUtil.deep_symbolize_keys(redis.hgetall("crawl_details")), 
+        minute_totals: HashUtil.deep_symbolize_keys(redis.hgetall("minute_totals")),
+        status_200_count: HashUtil.deep_symbolize_keys(redis.hgetall("status_200_count")),
+        status_400_count: HashUtil.deep_symbolize_keys(redis.hgetall("status_400_count")),
+        status_500_count: HashUtil.deep_symbolize_keys(redis.hgetall("status_500_count")),
+        mime_text_count: HashUtil.deep_symbolize_keys(redis.hgetall("mime_text_count")),
+        mime_image_count: HashUtil.deep_symbolize_keys(redis.hgetall("mime_image_count")),
+        mime_application_count: HashUtil.deep_symbolize_keys(redis.hgetall("mime_application_count")),
+        pages_count: HashUtil.deep_symbolize_keys(redis.hgetall("pages_count")),
+        assets_count: HashUtil.deep_symbolize_keys(redis.hgetall("assets_count"))
     }
 
     @dates = (1..30).to_a.reverse.map{|minutes| [(DateTime.now - (minutes/1440.0)).strftime("%Y-%m-%d %H:%M").to_sym, minutes] }

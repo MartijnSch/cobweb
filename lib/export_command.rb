@@ -8,10 +8,10 @@ class ExportCommand
     default_root_path = File.join(Dir.pwd, uri.host)
 
     options = {
-      :cache => 600,
-      :crawl_limit => 1000000,
-      :raise_exceptions => true,
-      :root_path => default_root_path
+      cache: 600,
+      crawl_limit: 1000000,
+      raise_exceptions: true,
+      root_path: default_root_path
     }.merge(opts)
     
 
@@ -60,8 +60,8 @@ class ExportCommand
 
           File.open(options[:root_path] + path + filename, "w+"){|f| f.write(page.to_yaml)}
 
-          #puts "Spree::Page.create!(:title => #{title}, :body => #{body}, :visible => #{true}, :meta_keywords => #{keywords}, :meta_description => #{description}, :layout => "", :meta_title => #{meta_title})"
-          #Spree::Page.create!(:title => title, :body => body, :visible => false, :meta_keywords => keywords, :meta_description => description, :layout => "", :meta_title => meta_title)
+          #puts "Spree::Page.create!(title: #{title}, body: #{body}, visible: #{true}, meta_keywords: #{keywords}, meta_description: #{description}, layout: "", meta_title: #{meta_title})"
+          #Spree::Page.create!(title: title, body: body, visible: false, meta_keywords: keywords, meta_description: description, layout: "", meta_title: meta_title)
         else
           File.open(options[:root_path] + path + filename, "wb"){|f| f.write(Base64.decode64(page[:body]))}
         end

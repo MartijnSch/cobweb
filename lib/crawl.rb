@@ -6,7 +6,7 @@ module CobwebModule
 
       setup_defaults
 
-      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{@options[:crawl_id]}", :redis => RedisConnection.new(@options[:redis_options]))
+      @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{@options[:crawl_id]}", redis: RedisConnection.new(@options[:redis_options]))
       @stats = Stats.new(@options)
       @debug = @options[:debug]
       @first_to_finish = false
@@ -105,7 +105,7 @@ module CobwebModule
 
       @cobweb_links = CobwebLinks.new(@options)
       if within_queue_limits?
-        document_links = ContentLinkParser.new(@options[:url], content.body, @options).all_links(:valid_schemes => [:http, :https])
+        document_links = ContentLinkParser.new(@options[:url], content.body, @options).all_links(valid_schemes: [:http, :https])
         #get rid of duplicate links in the same page.
         document_links.uniq!
         

@@ -18,7 +18,7 @@ describe CobwebCrawlHelper do
     
     describe "with data" do
       before(:each) do
-        data = {:crawl_id => "asdf"}
+        data = {crawl_id: "asdf"}
         @crawl = CobwebCrawlHelper.new(data)
       end
       it "should create a crawl object" do
@@ -38,7 +38,7 @@ describe CobwebCrawlHelper do
           end
           105.times do |item_count|
             2.times do |crawl_count|
-              item_data = {:crawl_id => "crawl_#{crawl_count}_id", :url => "http://crawl#{crawl_count}.com/page#{item_count}.html"}
+              item_data = {crawl_id: "crawl_#{crawl_count}_id", url: "http://crawl#{crawl_count}.com/page#{item_count}.html"}
               Resque.enqueue(CrawlJob, item_data)
             end
           end
@@ -51,7 +51,7 @@ describe CobwebCrawlHelper do
         end
         describe "after called" do
           before(:each) do
-            @crawl = CobwebCrawlHelper.new({:crawl_id => "crawl_0_id"})
+            @crawl = CobwebCrawlHelper.new({crawl_id: "crawl_0_id"})
             @crawl.destroy
           end
           it "should delete only the crawl specified" do

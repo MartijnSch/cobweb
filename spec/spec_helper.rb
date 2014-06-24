@@ -15,7 +15,7 @@ APP_ROOT = File.expand_path(File.dirname(__FILE__) + '/../')
 RSpec.configure do |config|
   
   if ENV["TRAVIS_RUBY_VERSION"] || ENV['CI']
-    config.filter_run_excluding :local_only => true
+    config.filter_run_excluding local_only: true
   end
 
   Thread.new do

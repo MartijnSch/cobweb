@@ -12,7 +12,7 @@ class CobwebCrawler
     
     @statistic = {}
     
-    @options[:redis_options] = {:host => "127.0.0.1"} unless @options.has_key? :redis_options
+    @options[:redis_options] = {host: "127.0.0.1"} unless @options.has_key? :redis_options
     if @options.has_key? :crawl_id
       @crawl_id = @options[:crawl_id]
     else
@@ -20,7 +20,7 @@ class CobwebCrawler
       @options[:crawl_id] = @crawl_id
     end
     
-    @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{@crawl_id}", :redis => RedisConnection.new(@options[:redis_options]))
+    @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{@crawl_id}", redis: RedisConnection.new(@options[:redis_options]))
     @options[:internal_urls] = [] if @options[:internal_urls].nil?
     @options[:internal_urls].map{|url| @redis.sadd("internal_urls", url)}
     @options[:seed_urls] = [] if @options[:seed_urls].nil?
@@ -30,7 +30,7 @@ class CobwebCrawler
     
     @debug = @options[:debug]
     
-    @stats = Stats.new(@options.merge(:crawl_id => @crawl_id))
+    @stats = Stats.new(@options.merge(crawl_id: @crawl_id))
     if @options[:web_statistics]
       Server.start(@options)
     end
@@ -98,7 +98,7 @@ class CobwebCrawler
             @redis.sadd "crawled", url.to_s
             @redis.incr "crawl-counter" 
           
-            document_links = ContentLinkParser.new(url, content[:body]).all_links(:valid_schemes => [:http, :https]).uniq
+            document_links = ContentLinkParser.new(url, content[:body]).all_links(valid_schemes: [:http, :https]).uniq
 
             # select the link if its internal (eliminate external before expensive lookups in queued and crawled)
             cobweb_links = CobwebLinks.new(@options)

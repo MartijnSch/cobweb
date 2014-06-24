@@ -7,7 +7,7 @@ describe Cobweb do
     setup_stubs
 
     @base_url = "http://www.baseurl.com/"
-    @cobweb = Cobweb.new :quiet => true, :cache => nil
+    @cobweb = Cobweb.new quiet: true, cache: nil
 
     @default_options = {"User-Agent"=>"cobweb/#{CobwebVersion.version} (ruby/#{RUBY_VERSION} nokogiri/#{Nokogiri::VERSION})"}
   end
@@ -94,7 +94,7 @@ describe Cobweb do
       
       before(:each) do
         @base_url = "http://redirect-me.com/redirect.html"
-        @cobweb = Cobweb.new(:follow_redirects => true, :quiet => true, :cache => nil)
+        @cobweb = Cobweb.new(follow_redirects: true, quiet: true, cache: nil)
       end
       
       it "should return final page from redirects" do
@@ -111,7 +111,7 @@ describe Cobweb do
         
       end
       it "should not follow with redirect disabled" do
-        @cobweb = Cobweb.new(:follow_redirects => false, :cache => 3)
+        @cobweb = Cobweb.new(follow_redirects: false, cache: 3)
         @mock_http_client.should_receive(:request).with(@mock_http_redirect_request).and_return(@mock_http_redirect_response)
         
         content = @cobweb.get(@base_url)
@@ -127,7 +127,7 @@ describe Cobweb do
     describe "with cache" do
       
       before(:each) do
-        @cobweb = Cobweb.new :quiet => true, :cache => 1
+        @cobweb = Cobweb.new quiet: true, cache: 1
         Redis.new.flushdb
       end
       

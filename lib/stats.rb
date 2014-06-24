@@ -13,7 +13,7 @@ class Stats
       @full_redis = Redis.new(options[:redis_options])
     end
     @lock = Mutex.new
-    @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", :redis => @full_redis)
+    @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", redis: @full_redis)
   end
   
   # Sets up the crawl in statistics

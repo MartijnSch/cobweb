@@ -28,7 +28,7 @@ class CobwebCrawlHelper
 
     if options[:finished_resque_queue] && options[:queue_system] == :resque && RESQUE_INSTALLED
       
-      additional_stats = {:crawl_id => id, :crawled_base_url => @stats.redis.get("crawled_base_url")}
+      additional_stats = {crawl_id: id, crawled_base_url: @stats.redis.get("crawled_base_url")}
       additional_stats[:redis_options] = @data[:redis_options] unless @data[:redis_options] == {}
       additional_stats[:source_id] = options[:source_id] unless options[:source_id].nil?
       

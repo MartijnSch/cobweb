@@ -41,7 +41,7 @@ class CrawlJob
 
             #if the enqueue counter has been requested update that
             if content_request.has_key?(:enqueue_counter_key)
-              enqueue_redis = Redis::Namespace.new(content_request[:enqueue_counter_namespace].to_s, :redis => RedisConnection.new(content_request[:redis_options]))
+              enqueue_redis = Redis::Namespace.new(content_request[:enqueue_counter_namespace].to_s, redis: RedisConnection.new(content_request[:redis_options]))
               current_count = enqueue_redis.hget(content_request[:enqueue_counter_key], content_request[:enqueue_counter_field]).to_i
               enqueue_redis.hset(content_request[:enqueue_counter_key], content_request[:enqueue_counter_field], current_count+1)
             end
@@ -72,7 +72,7 @@ class CrawlJob
 
   # Sets the crawl status to CobwebCrawlHelper::FINISHED and enqueues the crawl finished job
   def self.finished(content_request)
-    additional_stats = {:crawl_id => content_request[:crawl_id], :crawled_base_url => @crawl.crawled_base_url}
+    additional_stats = {crawl_id: content_request[:crawl_id], crawled_base_url: @crawl.crawled_base_url}
     additional_stats[:redis_options] = content_request[:redis_options] unless content_request[:redis_options] == {}
     additional_stats[:source_id] = content_request[:source_id] unless content_request[:source_id].nil?
     
@@ -85,7 +85,7 @@ class CrawlJob
   
   # Enqueues the content to the processing queue setup in options
   def self.send_to_processing_queue(content, content_request)
-    content_to_send = content.merge({:internal_urls => content_request[:internal_urls], :redis_options => content_request[:redis_options], :source_id => content_request[:source_id], :crawl_id => content_request[:crawl_id]})
+    content_to_send = content.merge({internal_urls: content_request[:internal_urls], redis_options: content_request[:redis_options], source_id: content_request[:source_id], crawl_id: content_request[:crawl_id]})
     if content_request[:direct_call_process_job]
       #clazz = content_request[:processing_queue].to_s.constantize
       clazz = const_get(content_request[:processing_queue])

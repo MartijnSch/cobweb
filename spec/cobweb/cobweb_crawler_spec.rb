@@ -26,7 +26,7 @@ describe CobwebCrawler do
 
     it "should crawl a site" do
 
-      @crawler = CobwebCrawler.new({:cache => false, :quiet => true, :debug => false})
+      @crawler = CobwebCrawler.new({cache: false, quiet: true, debug: false})
       @statistics = @crawler.crawl(@base_url)
 
       @statistics.should_not be_nil
@@ -39,7 +39,7 @@ describe CobwebCrawler do
     end
     
     it "should take a block" do
-      crawler = CobwebCrawler.new({:cache => false, :quiet => true, :debug => false, :crawl_limit => 1})
+      crawler = CobwebCrawler.new({cache: false, quiet: true, debug: false, crawl_limit: 1})
       statistics = crawler.crawl(@base_url) do |content, statistics|
         content[:url].should_not be_nil
         statistics[:average_length].should_not be_nil
@@ -55,7 +55,7 @@ describe CobwebCrawler do
     context "storing inbound links" do
 
       before(:each) do
-        @crawler = CobwebCrawler.new({:cache => false, :quiet => true, :debug => false, :store_inbound_links => true})
+        @crawler = CobwebCrawler.new({cache: false, quiet: true, debug: false, store_inbound_links: true})
         @statistics = @crawler.crawl(@base_url)        
       end
 

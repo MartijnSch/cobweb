@@ -4,12 +4,12 @@ describe Robots do
   include HttpStubs
   before(:each) do
     setup_stubs
-    @cobweb = Cobweb.new :quiet => true, :cache => nil
+    @cobweb = Cobweb.new quiet: true, cache: nil
   end
   
   describe "default user-agent" do
     before(:each) do
-      @options = {:url => "http://localhost:3532/"}
+      @options = {url: "http://localhost:3532/"}
     end
     
     it "should parse a valid robots.txt" do
@@ -34,7 +34,7 @@ describe Robots do
   
   describe "google user-agent" do
     before(:each) do
-      @options = {:url => "http://localhost/", :user_agent => "google"}
+      @options = {url: "http://localhost/", user_agent: "google"}
     end
     it "should parse a valid robots.txt" do
       lambda {Robots.new(@options)}.should_not raise_error
@@ -52,7 +52,7 @@ describe Robots do
     
   describe "cybermapper user-agent" do
     before(:each) do
-      @options = {:url => "http://localhost/", :user_agent => "cybermapper"}
+      @options = {url: "http://localhost/", user_agent: "cybermapper"}
     end
     it "should parse a valid robots.txt" do
       lambda {Robots.new(@options)}.should_not raise_error

@@ -68,8 +68,8 @@ class Cobweb
   def start(base_url)
     raise ":base_url is required" unless base_url
     request = {
-      :crawl_id => Digest::SHA1.hexdigest("#{Time.now.to_i}.#{Time.now.usec}"),
-      :url => base_url 
+      crawl_id: Digest::SHA1.hexdigest("#{Time.now.to_i}.#{Time.now.usec}"),
+      url: base_url 
     }  
     
     if @options[:internal_urls].nil? || @options[:internal_urls].empty?
@@ -80,7 +80,7 @@ class Cobweb
     end
     
     request.merge!(@options)
-    @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{request[:crawl_id]}", :redis => RedisConnection.new(request[:redis_options]))
+    @redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{request[:crawl_id]}", redis: RedisConnection.new(request[:redis_options]))
     @redis.set("original_base_url", base_url)
     @redis.hset "statistics", "queued_at", DateTime.now
     @redis.set("crawl-counter", 0)
@@ -134,13 +134,13 @@ class Cobweb
     
     # connect to redis
     if options.has_key? :crawl_id
-      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", :redis => RedisConnection.new(@options[:redis_options]))
+      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", redis: RedisConnection.new(@options[:redis_options]))
     else
-      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", :redis => RedisConnection.new(@options[:redis_options]))
+      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", redis: RedisConnection.new(@options[:redis_options]))
     end
-    full_redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", :redis => RedisConnection.new(@options[:redis_options]))
+    full_redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", redis: RedisConnection.new(@options[:redis_options]))
 
-    content = {:base_url => url}
+    content = {base_url: url}
 
     # check if it has already been cached
     if ((@options[:cache_type] == :crawl_based && redis.get(unique_id)) || (@options[:cache_type] == :full && full_redis.get(unique_id))) && @options[:cache]
@@ -196,7 +196,7 @@ class Cobweb
           cookies = get_cookies(response)
 
           # get the content from redirect location
-          content = get(uri, options.merge(:redirect_limit => redirect_limit, :cookies => cookies))
+          content = get(uri, options.merge(redirect_limit: redirect_limit, cookies: cookies))
 
           content[:redirect_through] = [uri.to_s] if content[:redirect_through].nil?
           content[:redirect_through].insert(0, url)
@@ -316,12 +316,12 @@ class Cobweb
     
     # connect to redis
     if options.has_key? :crawl_id
-      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", :redis => RedisConnection.new(@options[:redis_options]))
+      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}-#{options[:crawl_id]}", redis: RedisConnection.new(@options[:redis_options]))
     else
-      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", :redis => RedisConnection.new(@options[:redis_options]))
+      redis = Redis::Namespace.new("cobweb-#{Cobweb.version}", redis: RedisConnection.new(@options[:redis_options]))
     end
     
-    content = {:base_url => url}
+    content = {base_url: url}
     
     # check if it has already been cached
     if redis.get("head-#{unique_id}") and @options[:cache]
@@ -366,7 +366,7 @@ class Cobweb
           raise RedirectError, "Redirect Limit reached" if redirect_limit == 0
           cookies = get_cookies(response)
 
-          content = head(uri, options.merge(:redirect_limit => redirect_limit, :cookies => cookies))
+          content = head(uri, options.merge(redirect_limit: redirect_limit, cookies: cookies))
           content[:url] = uri.to_s
           content[:redirect_through] = [] if content[:redirect_through].nil?
           content[:redirect_through].insert(0, url)

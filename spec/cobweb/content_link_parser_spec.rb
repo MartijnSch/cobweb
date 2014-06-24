@@ -109,7 +109,7 @@ describe ContentLinkParser do
       end
       
       it "should return only valid_schemes supplied" do
-        links = @content_parser.all_links(:valid_schemes => [:https])
+        links = @content_parser.all_links(valid_schemes: [:https])
         links.count.should == 1
       end
       
@@ -123,7 +123,7 @@ describe ContentLinkParser do
 
     describe "ignoring default tags" do
       it "should not return any links" do
-        parser = ContentLinkParser.new("http://sample-links.com", @content, :ignore_default_tags => true)
+        parser = ContentLinkParser.new("http://sample-links.com", @content, ignore_default_tags: true)
         lambda{parser.links}.should raise_error(NoMethodError)
       end
     end

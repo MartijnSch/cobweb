@@ -55,7 +55,7 @@ class CrawlHelper
 
             @cobweb_links = CobwebLinks.new(content_request)
             if within_queue_limits?(content_request[:crawl_limit])
-              internal_links = ContentLinkParser.new(content_request[:url], content[:body], content_request).all_links(:valid_schemes => [:http, :https])
+              internal_links = ContentLinkParser.new(content_request[:url], content[:body], content_request).all_links(valid_schemes: [:http, :https])
 
               # select the link if its internal
               internal_links.select! { |link| @cobweb_links.internal?(link) }
@@ -124,7 +124,7 @@ class CrawlHelper
       ap "CRAWL FINISHED  #{content_request[:url]}, #{counters}, #{@redis.get("original_base_url")}, #{@redis.get("crawled_base_url")}" if content_request[:debug]
       @stats.end_crawl(content_request)
       
-      additional_stats = {:crawl_id => content_request[:crawl_id], :crawled_base_url => @redis.get("crawled_base_url")}
+      additional_stats = {crawl_id: content_request[:crawl_id], crawled_base_url: @redis.get("crawled_base_url")}
       additional_stats[:redis_options] = content_request[:redis_options] unless content_request[:redis_options] == {}
       additional_stats[:source_id] = content_request[:source_id] unless content_request[:source_id].nil?
       
@@ -143,7 +143,7 @@ class CrawlHelper
   
   # Enqueues the content to the processing queue setup in options
   def self.send_to_processing_queue(content, content_request)
-    content_to_send = content.merge({:internal_urls => content_request[:internal_urls], :redis_options => content_request[:redis_options], :source_id => content_request[:source_id], :crawl_id => content_request[:crawl_id]})
+    content_to_send = content.merge({internal_urls: content_request[:internal_urls], redis_options: content_request[:redis_options], source_id: content_request[:source_id], crawl_id: content_request[:crawl_id]})
     if content_request[:direct_call_process_job]
       clazz = const_get(content_request[:processing_queue])
       clazz.perform(content_to_send)

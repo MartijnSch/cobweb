@@ -5,11 +5,11 @@ class ReportCommand
       options = opts.to_hash.delete_if { |k, v| v.nil? || k == :url}
       options[:quiet] = !opts[:verbose]
 
-      @crawler = CobwebCrawler.new({:cache_type => :full, :raise_exceptions => true}.merge(options))
+      @crawler = CobwebCrawler.new({cache_type: :full, raise_exceptions: true}.merge(options))
 
       columns = nil 
 
-      CSV.open(options[:output], "wb", :force_quotes => true) do |csv|
+      CSV.open(options[:output], "wb", force_quotes: true) do |csv|
         statistics = @crawler.crawl(options[:url]) do |page|
           puts "Reporting on #{page[:url]}"
           @doc = page[:body]

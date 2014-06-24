@@ -1,25 +1,25 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 require 'resolv'
 
-describe CobwebModule::Crawl, :local_only => true do
+describe CobwebModule::Crawl, local_only: true do
   include HttpStubs
   before(:each) do
     setup_stubs
     
-    @local_redis = {:host => "localhost", :port => 6379}
-    @remote_redis = {:host => "remote-redis", :port => 6379}
+    @local_redis = {host: "localhost", port: 6379}
+    @remote_redis = {host: "remote-redis", port: 6379}
     
-    @request = {:crawl_id => "test_crawl_id"}
+    @request = {crawl_id: "test_crawl_id"}
   end
 
   describe "remote redis" do
     before(:each) do
-      @local = CobwebModule::Crawl.new(:redis_options => @local_redis)
+      @local = CobwebModule::Crawl.new(redis_options: @local_redis)
       @local.redis.del("test_redis")
 
       begin
         Resolv.getaddress @remote_redis[:host]
-        @remote = CobwebModule::Crawl.new(:redis_options => @remote_redis)
+        @remote = CobwebModule::Crawl.new(redis_options: @remote_redis)
         @remote.redis.del("test_redis")
       rescue
         @remote = nil

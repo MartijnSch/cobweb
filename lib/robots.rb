@@ -10,7 +10,7 @@ class Robots
     @options[:user_agent] = "cobweb" unless @options.has_key? :user_agent
 
     uri = URI.parse(@options[:url])
-    content = Cobweb.new(:cache => nil, :text_mime_types => ["text/html", "application/xhtml+xml", "text/plain"]).get([uri.scheme, "://", uri.host, ":", uri.port, "/", @options[:file]].join)
+    content = Cobweb.new(cache: nil, text_mime_types: ["text/html", "application/xhtml+xml", "text/plain"]).get([uri.scheme, "://", uri.host, ":", uri.port, "/", @options[:file]].join)
     if content[:mime_type][0..4] == "text/"
       @raw_data = parse_data(content[:body])
 
@@ -56,7 +56,7 @@ class Robots
     lines.each do |line|
       if line[0..10].downcase == "user-agent:"
         current_user_agent = line.split(":")[1..-1].join.downcase.strip.to_sym
-        user_agents[current_user_agent] = {:allow => [], :disallow => []}
+        user_agents[current_user_agent] = {allow: [], disallow: []}
       else
         if current_user_agent
           values = line.split(":")
