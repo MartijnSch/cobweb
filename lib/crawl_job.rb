@@ -1,7 +1,7 @@
 
 # CrawlJob defines a resque job to perform the crawl
 class CrawlJob
-  
+  extend Resque::Plugins::JobStats
   require "net/https"  
   require "uri"
   require "redis"
