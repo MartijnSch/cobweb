@@ -17,7 +17,7 @@ class ContentLinkParser
     end
 
     @options[:tags] = {}
-    @options[:tags][:links] = [["a[href]", "href"], ["frame[src]", "src"], ["link[href]:not([rel])", "href"], ["area[href]", "href"]]
+    @options[:tags][:links] = [["a[href]", "href"], ["frame[src]", "src"], ["meta[@http-equiv=\"refresh\"]", "content"], ["link[href]:not([rel])", "href"], ["area[href]", "href"]]
 
     #clear the default tags if required
     @options[:tags] = {} if @options[:ignore_default_tags]
